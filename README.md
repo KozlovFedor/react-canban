@@ -1,3 +1,8 @@
+# Kanban page with draggable components
+
+![image](https://user-images.githubusercontent.com/14001520/206720869-3e8c9656-f913-4d67-be7b-54c3fb6d36e8.png)
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
