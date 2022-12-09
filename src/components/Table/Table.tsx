@@ -5,6 +5,9 @@ import { PlusIcon } from '../Icons';
 import { TableItem } from './TableItem';
 import useTableData from './useTableData';
 import Text from '../Text';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DroppableItem } from './DroppableItem';
 
 const Container = styled.div`
   display: flex;
@@ -67,6 +70,11 @@ const Counter = styled.div`
   padding: 2px 9px;
 `;
 
+const Blank = styled.div`
+  min-height: 50px;
+  height: 100%;
+`;
+
 interface IItem {
   key: string;
   description: string;
@@ -80,6 +88,30 @@ export interface IColumn {
   items: IItem[];
 };
 
+const renderTableItem = (item: IItem, columnKey: string) => {
+  return columnKey === 'completed' ? (
+    <TableItem
+      key={item.key}
+      itemKey={item.key}
+      columnKey={columnKey}
+      color={backgrounds.lightGrey}
+    >
+      <Text color={textColors.darkGrey} textDecoration='line-through'>{item.description}</Text>
+      <Text color={textColors.darkGrey}>{item.time}</Text>
+    </TableItem>
+  ) : (
+    <TableItem
+      key={item.key}
+      itemKey={item.key}
+      columnKey={columnKey}
+      color={item.color}
+    >
+      <Text>{item.description}</Text>
+      <Text secondary>{item.time}</Text>
+    </TableItem>
+  );
+};
+
 interface TableProps {
   columns: Record<string, IColumn>;
 };
@@ -88,38 +120,51 @@ export const Table: React.FC<TableProps> = (props) => {
   const [columns, dispatch] = useTableData();
 
   return (
-    <Container>
-      {Object.entries(columns).map(([key, col], index) => (
-        <StyledColumn key={col.key}>
-          <StyledTitle data-last={index === Object.keys(columns).length - 1}>
-            {col.title}
-            <Counter>
-              {col.items.length}
-            </Counter>
+    <DndProvider backend={HTML5Backend}>
+      <Container>
+        {Object.entries(columns).map(([key, col], index) => (
+          <StyledColumn key={col.key}>
+            <StyledTitle data-last={index === Object.keys(columns).length - 1}>
+              {col.title}
+              <Counter>
+                {col.items.length}
+              </Counter>
+            </StyledTitle>
+            <StyledContent>
+              {col.items.map(item => (
+                <DroppableItem key={item.key} moveItem={(fromColumnKey, fromItemKey) => dispatch({
+                  type: 'moveItem',
+                  payload: {
+                    toColumnKey: col.key,
+                    toItemKey: item.key,
+                    fromColumnKey: fromColumnKey,
+                    fromItemKey: fromItemKey,
+                  },
+                })}>
+                  {renderTableItem(item, col.key)}
+                </DroppableItem>
+              ))}
+              <DroppableItem key='blank' moveItem={(fromColumnKey, fromItemKey) => dispatch({
+                  type: 'moveItem',
+                  payload: {
+                    toColumnKey: col.key,
+                    toItemKey: 'blank',
+                    fromColumnKey: fromColumnKey,
+                    fromItemKey: fromItemKey,
+                  },
+                })}>
+                  <Blank/>
+                </DroppableItem>
+            </StyledContent>
+          </StyledColumn>
+        ))}
+        <StyledColumn>
+          <StyledTitle className='createColumn'>
+            <PlusIcon color={textColors.grey}/>
+            Create status
           </StyledTitle>
-          <StyledContent>
-            {col.items.map(item => (
-              col.key === 'completed' ? (
-                <TableItem key={item.key} color={backgrounds.lightGrey}>
-                  <Text color={textColors.darkGrey} textDecoration='line-through'>{item.description}</Text>
-                  <Text color={textColors.darkGrey}>{item.time}</Text>
-                </TableItem>
-              ) : (
-                <TableItem key={item.key} color={item.color}>
-                  <Text>{item.description}</Text>
-                  <Text secondary>{item.time}</Text>
-                </TableItem>
-              )
-            ))}
-          </StyledContent>
         </StyledColumn>
-      ))}
-      <StyledColumn>
-        <StyledTitle className='createColumn'>
-          <PlusIcon color={textColors.grey}/>
-          Create status
-        </StyledTitle>
-      </StyledColumn>
-    </Container>
+      </Container>
+    </DndProvider>
   );
 };
